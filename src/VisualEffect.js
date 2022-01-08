@@ -11,6 +11,9 @@ attribute vec2 aTextureCoord;
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
+// size of the viewport
+uniform vec2 uResolution;
+
 uniform mat4 uTextureMatrix0;
 
 varying vec3 vVertexPosition;
@@ -21,7 +24,7 @@ void main() {
     
     // varyings
     vVertexPosition = aVertexPosition;
-    vTextureCoord = (uTextureMatrix0 * vec4(aTextureCoord, 0.0, 1.0)).xy;
+    vTextureCoord = (uTextureMatrix0 * vec4(aTextureCoord, 0.0, 1.0)).xy;   
 }
 `;
 
@@ -36,7 +39,13 @@ uniform float uTime;
 uniform vec2 uResolution;
 uniform vec2 uMouse;
  
-float CHECK_SIZE = .025;
+// check size under 1920, 1080
+
+// the constant check size
+const float CHECK_SIZE_PIXEL = 6.0;
+
+// check size for screen space
+float CHECK_SIZE = CHECK_SIZE_PIXEL * 4.0 / uResolution.x;
 
 // Noise
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -73,12 +82,9 @@ float noise(vec3 P) {
 }
 float noise(vec2 P) { return noise(vec3(P, 0.0)); }
 
-float getCheckerColor(vec3 vertexPosition) { 
-
-  float aspectRatio = uResolution.y / uResolution.x;
-
-  float x_thing = step(CHECK_SIZE * aspectRatio / 2.0, mod(vertexPosition.x, CHECK_SIZE  * aspectRatio));
-  float y_thing = step(CHECK_SIZE / 2.0, mod(vertexPosition.y, CHECK_SIZE));
+float getCheckerColor(vec3 vertexPosition, float aspectRatio) { 
+  float x_thing = step(CHECK_SIZE / 2.0, mod(vertexPosition.x, CHECK_SIZE));
+  float y_thing = step(CHECK_SIZE / aspectRatio / 2.0, mod(vertexPosition.y, CHECK_SIZE / aspectRatio));
 
   bool condition1 = x_thing > 0.5 && y_thing < 0.5;
   bool condition2 = x_thing < 0.5 && y_thing > 0.5;
@@ -93,46 +99,54 @@ float getCheckerColor(vec3 vertexPosition) {
   }
 }
 
-ivec2 getCell(vec2 screenpos) {
-  float aspectRatio = uResolution.y / uResolution.x;
-  
-  int col = int(screenpos.x * 2.0 / (CHECK_SIZE * aspectRatio));
-  int row = int(screenpos.y * 2.0 / (CHECK_SIZE));
-  return ivec2(col, row);
+ivec2 getCell(vec2 screenpos, float aspectRatio) {
+  int col = int(screenpos.x * 2.0 / (CHECK_SIZE));
+  int row = int(screenpos.y * 2.0 / (CHECK_SIZE / aspectRatio));
+  return ivec2(col, row); 
 }
 
-vec2 getCellPosition(ivec2 cell) {
-  float aspectRatio = uResolution.y / uResolution.x;
-  return vec2(float(cell.x) * CHECK_SIZE * aspectRatio, float(cell.y) * CHECK_SIZE); 
+vec2 getCellPosition(ivec2 cell, float aspectRatio) {
+  return vec2(float(cell.x) * CHECK_SIZE, float(cell.y) * CHECK_SIZE  / aspectRatio); 
 }
 
 void main() {
+  
   vec2 textureCoord = vTextureCoord;
   vec3 vertexPosition = vVertexPosition;
-  float color = getCheckerColor(vertexPosition);
-
-  ivec2 currentCell = getCell(vec2(vertexPosition.x,vertexPosition.y));
+  float aspectRatio = uResolution.y / uResolution.x;
+  
+  // ==========================================
+  // Creating the checkerboard map
+  // ==========================================
+  
+  float color = getCheckerColor(vertexPosition, aspectRatio);
+  ivec2 currentCell = getCell(vec2(vertexPosition.x,vertexPosition.y), aspectRatio);
 
   // the pixel position of the cell
-  vec2 currentCellPosition = getCellPosition(currentCell);
+  vec2 currentCellPosition = getCellPosition(currentCell, aspectRatio);
   
   // make a rasterised noise base on the checkerboard pattern size
   float noiseInfluence = noise(vec2(currentCell*50)/ 220.0);
 
   // make the noise influence look sharp
   noiseInfluence = noiseInfluence * 1000.0;
-
-  float mouseInfluence = distance(currentCellPosition, uMouse*2.0) * 20.0;
-
-  // if(mod(float(currentCell.y), 2.0) == 0.0) { 
-  //   gl_FragColor = vec4(color, color, color, 1.0);
-  // }
   
+
+  // ==============================================
+  // Introduce mouse influence to the checker map
+  // ==============================================
+
+  // mouse size in pixel
+  float mouseSize = 32.0; 
+  
+  // scale with resolution
+  float mouseInfluence = distance(currentCellPosition * uResolution, uMouse*2.0 * uResolution) / (mouseSize * 2.0);
+
   // gl_FragColor = vec4(vec2(noiseInfluence), 1.0, 1.0);
   color = mix(color * noiseInfluence, 1.0, mouseInfluence) > .5 ? 1.0: 0.0;
   
   if(mouseInfluence < 1.0) {
-    gl_FragColor = color == 1.0? vec4(color, 0.0, 0.0, 1.0): vec4(0.0);
+    gl_FragColor = color == 0.0? vec4(color, 0.0, 0.0, 1.0): vec4(0.0);
   } else { 
     gl_FragColor = vec4(1.0, 1.0, 1.0, 0.0);
   }
@@ -209,6 +223,7 @@ export function VisualEffect() {
         width: "100%",
         height: "100vh",
         margin: "auto auto",
+        cursorEvent: "none",
       }}
     >
       <img

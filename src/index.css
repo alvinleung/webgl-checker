@@ -5,6 +5,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Hide mouse cursor */
+  cursor: none;
 }
 
 code {
@@ -24,7 +27,7 @@ code {
   left: 0;
   width: 100vw;
   height: 100vh;
-  cursor: none;
+  pointer-events: none;
 
   z-index: 1000;
 }
