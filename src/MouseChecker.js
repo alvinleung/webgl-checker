@@ -58,9 +58,9 @@ export function MouseChecker({ children }) {
       mouseCoordsDiff.y * mouseCoordsDiff.y;
 
     const CURSOR_SCALE_FACTOR = 6000;
-    const CURSOR_SENSITIVITY = 10;
-    const MIN_CURSOR_SIZE = 6;
-    const MAX_CURSOR_SIZE = 40;
+    const CURSOR_SENSITIVITY = 7;
+    const MIN_CURSOR_SIZE = 4;
+    const MAX_CURSOR_SIZE = 20;
 
     targetCursorSize.current = clamp(
       CURSOR_SCALE_FACTOR * mouseSpeedSquared,
@@ -70,7 +70,6 @@ export function MouseChecker({ children }) {
 
     cursorSize.current +=
       (targetCursorSize.current - cursorSize.current) / CURSOR_SENSITIVITY;
-    console.log(targetCursorSize.current);
 
     plane.uniforms.cursorSize.value = cursorSize.current;
     plane.uniforms.mouse.value = nextMouseCoords;

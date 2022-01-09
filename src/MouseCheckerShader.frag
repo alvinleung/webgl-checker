@@ -12,7 +12,7 @@ uniform vec2 uMouse;
 // check size under 1920, 1080
 
 // the constant check size
-const float CHECK_SIZE_PIXEL = 6.0;
+const float CHECK_SIZE_PIXEL = 8.0;
 
 // check size for screen space
 float CHECK_SIZE = CHECK_SIZE_PIXEL * 4.0 / uResolution.x;
@@ -89,7 +89,7 @@ void main() {
   // Creating the checkerboard map
   // ==========================================
   
-  float color = getCheckerColor(vertexPosition, aspectRatio);
+  float checkerColor = getCheckerColor(vertexPosition, aspectRatio);
   ivec2 currentCell = getCell(vec2(vertexPosition.x,vertexPosition.y), aspectRatio);
 
   // the pixel position of the cell
@@ -108,14 +108,24 @@ void main() {
 
   // mouse size in pixel
   float mouseSize = CHECK_SIZE_PIXEL * uCursorSize; 
+  float noiseInfluence2 = noise(vec2(currentCell*100)/ 220.0+5.0);
+  // make the noise influence look sharp
+  noiseInfluence2 = noiseInfluence2;
   
   // scale with resolution
   float mouseInfluence = distance(currentCellPosition * uResolution, uMouse*2.0 * uResolution) / (mouseSize * 2.0);
-
-  // gl_FragColor = vec4(vec2(noiseInfluence), 1.0, 1.0);
-  color = mix(color * noiseInfluence, 1.0, mouseInfluence) > .5 ? 1.0: 0.0;
   
-  if(mouseInfluence < 1.0) {
+  // make the mouse image affect by the noise shape
+  float mouseNoiseComposite = (mouseInfluence) * (1.0-noiseInfluence2* (0.9));
+
+  // gl_FragColor = vec4(vec2(noiseInfluence), 1.0, 1.0); 
+  float checkerMouseComposite = mix(noiseInfluence, 1.0, mouseNoiseComposite);
+  float color = checkerColor > 0.5 ? checkerMouseComposite: 0.0;
+
+  // gl_FragColor = vec4(vec3(color), 1.0);
+  // return;
+  
+  if(mouseNoiseComposite < 1.0) {
     gl_FragColor = color == 0.0? vec4(color, 0.0, 0.0, 1.0): vec4(0.0);
   } else { 
     gl_FragColor = vec4(1.0, 1.0, 1.0, 0.0);
