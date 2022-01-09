@@ -1,34 +1,3 @@
-import React, { useEffect, useRef } from "react";
-import { Vec2 } from "curtainsjs";
-import { Plane } from "react-curtains";
-
-const basicVs = `
-precision mediump float;
-
-attribute vec3 aVertexPosition;
-attribute vec2 aTextureCoord;
-
-uniform mat4 uMVMatrix;
-uniform mat4 uPMatrix;
-
-// size of the viewport
-uniform vec2 uResolution;
-
-uniform mat4 uTextureMatrix0;
-
-varying vec3 vVertexPosition;
-varying vec2 vTextureCoord;
-
-void main() {
-    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-    
-    // varyings
-    vVertexPosition = aVertexPosition;
-    vTextureCoord = (uTextureMatrix0 * vec4(aTextureCoord, 0.0, 1.0)).xy;   
-}
-`;
-
-const basicFs = `
 precision mediump float;
 varying vec3 vVertexPosition;
 varying vec2 vTextureCoord;
@@ -36,6 +5,7 @@ varying vec2 vTextureCoord;
 uniform sampler2D uSampler0;
 
 uniform float uTime;
+uniform float uCursorSize;
 uniform vec2 uResolution;
 uniform vec2 uMouse;
  
@@ -110,7 +80,7 @@ vec2 getCellPosition(ivec2 cell, float aspectRatio) {
 }
 
 void main() {
-  
+
   vec2 textureCoord = vTextureCoord;
   vec3 vertexPosition = vVertexPosition;
   float aspectRatio = uResolution.y / uResolution.x;
@@ -137,7 +107,7 @@ void main() {
   // ==============================================
 
   // mouse size in pixel
-  float mouseSize = 32.0; 
+  float mouseSize = CHECK_SIZE_PIXEL * uCursorSize; 
   
   // scale with resolution
   float mouseInfluence = distance(currentCellPosition * uResolution, uMouse*2.0 * uResolution) / (mouseSize * 2.0);
@@ -150,87 +120,4 @@ void main() {
   } else { 
     gl_FragColor = vec4(1.0, 1.0, 1.0, 0.0);
   }
-}
-`;
-
-export function VisualEffect() {
-  const mousePos = useRef(new Vec2(0, 0));
-  const viewportResolution = useRef({
-    x: window.innerWidth,
-    y: window.innerHeight,
-  });
-
-  const basicUniforms = {
-    time: {
-      name: "uTime",
-      type: "1f",
-      value: 0,
-    },
-    mouse: {
-      name: "uMouse",
-      type: "2f",
-      value: mousePos.current,
-    },
-    resolution: {
-      name: "uResolution",
-      type: "2f",
-      value: new Vec2(window.innerWidth, window.innerHeight),
-    },
-  };
-
-  const onRender = (plane) => {
-    plane.uniforms.time.value++;
-    plane.uniforms.mouse.value = plane.mouseToPlaneCoords(mousePos.current);
-    plane.uniforms.resolution.value.set(
-      viewportResolution.current.x,
-      viewportResolution.current.y
-    );
-  };
-
-  useEffect(() => {
-    function handleMouseMove(e) {
-      mousePos.current.x = e.clientX;
-      mousePos.current.y = e.clientY;
-    }
-
-    function resizeResolution() {
-      viewportResolution.current.x = window.innerWidth;
-      viewportResolution.current.y = window.innerHeight;
-    }
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("resize", resizeResolution);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("resize", resizeResolution);
-    };
-  }, []);
-
-  return (
-    <Plane
-      className="BasicPlane"
-      // plane init parameters
-      vertexShader={basicVs}
-      fragmentShader={basicFs}
-      uniforms={basicUniforms}
-      // plane events
-      onRender={onRender}
-      style={{
-        top: "0rem",
-        left: "0rem",
-        position: "fixed",
-        width: "100%",
-        height: "100vh",
-        margin: "auto auto",
-        cursorEvent: "none",
-      }}
-    >
-      <img
-        style={{ display: "none" }}
-        src="https://unsplash.it/1920/1080?random=1"
-        alt=""
-      />
-    </Plane>
-  );
 }
