@@ -12,7 +12,7 @@ uniform vec2 uMouse;
 // check size under 1920, 1080
 
 // the constant check size
-const float CHECK_SIZE_PIXEL = 8.0;
+const float CHECK_SIZE_PIXEL = 6.0;
 
 // check size for screen space
 float CHECK_SIZE = CHECK_SIZE_PIXEL * 4.0 / uResolution.x;
