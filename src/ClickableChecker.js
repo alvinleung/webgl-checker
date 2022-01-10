@@ -6,7 +6,7 @@ import ClickableCheckerShaderVert from "./ClickableCheckerShader.vert";
 
 const CURSOR_TRANSITION_SENSITIVITY = 4;
 
-export default function ClickableChecker({ children }) {
+export default function ClickableChecker({ children, style }) {
   const { uniforms, mousePos, showGlobalCursor } = useCheckerContext();
   const boundingRef = useRef();
   const isHovering = useRef(false);
@@ -51,10 +51,7 @@ export default function ClickableChecker({ children }) {
         vertexShader={ClickableCheckerShaderVert}
         fragmentShader={ClickableCheckerShaderFrag}
         onRender={onRender}
-        style={{
-          height: "48px",
-          border: "none",
-        }}
+        style={{ padding: "2rem", fontSize: "4rem", ...style }}
       >
         {children}
       </Plane>

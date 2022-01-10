@@ -16,8 +16,8 @@ function App() {
       <div className="App">
         <h1>Touchpoint</h1>
       </div>
-      <ClickableChecker>Testing CLickable Area</ClickableChecker>
-      <ClickableChecker>Testing CLickable Area</ClickableChecker>
+      <ClickableChecker>Testing Clickable Area 1</ClickableChecker>
+      <ClickableChecker>Testing Clickable Area 2</ClickableChecker>
       {randomTextList.map((text, index) => {
         return <p key={index}>{text}</p>;
       })}
