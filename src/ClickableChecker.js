@@ -4,15 +4,13 @@ import { useCheckerContext } from "./MouseChecker";
 import ClickableCheckerShaderFrag from "./ClickableCheckerShader.frag";
 import ClickableCheckerShaderVert from "./ClickableCheckerShader.vert";
 
-const CURSOR_SCALE_FACTOR = 6000;
-const CURSOR_SENSITIVITY = 4;
-const MIN_CURSOR_SIZE = 0;
-const MAX_CURSOR_SIZE = 1;
+const CURSOR_TRANSITION_SENSITIVITY = 4;
 
 export default function ClickableChecker({ children }) {
   const { uniforms, mousePos, showGlobalCursor } = useCheckerContext();
   const boundingRef = useRef();
   const isHovering = useRef(false);
+  // const isMouseDown = useRef(false);
 
   const targetCursorSize = useRef(0);
   const cursorSize = useRef(0);
@@ -23,12 +21,11 @@ export default function ClickableChecker({ children }) {
     plane.uniforms.time.value = uniforms.current.time.value;
     plane.uniforms.mouse.value = plane.mouseToPlaneCoords(mousePos.current);
 
-    targetCursorSize.current = isHovering.current
-      ? MAX_CURSOR_SIZE * (planeBounds.width / 6)
-      : MIN_CURSOR_SIZE;
+    targetCursorSize.current = isHovering.current ? planeBounds.width / 6 : 0;
 
     cursorSize.current +=
-      (targetCursorSize.current - cursorSize.current) / CURSOR_SENSITIVITY;
+      (targetCursorSize.current - cursorSize.current) /
+      CURSOR_TRANSITION_SENSITIVITY;
     plane.uniforms.cursorSize.value = cursorSize.current;
 
     plane.uniforms.resolution.value.set(planeBounds.width, planeBounds.height);

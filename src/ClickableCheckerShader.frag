@@ -82,10 +82,6 @@ vec2 getCellPosition(ivec2 cell, float aspectRatio) {
 
 void main() {
 
-  if(uIsHovering) {
-    return;
-  } 
-
   vec2 textureCoord = vTextureCoord;
   vec3 vertexPosition = vVertexPosition;
   float aspectRatio = uResolution.y / uResolution.x;
@@ -122,9 +118,12 @@ void main() {
   // make the mouse image affect by the noise shape
   float mouseNoiseComposite = (mouseInfluence) * (1.0-noiseInfluence2* (0.9));
 
-  // gl_FragColor = vec4(vec2(noiseInfluence), 1.0, 1.0); 
-  float checkerMouseComposite = mix(noiseInfluence, 1.0, mouseNoiseComposite);
-  float color = checkerColor > 0.5 ? checkerMouseComposite: 0.0;\
+
+  // float checkerMouseComposite = mix(noiseInfluence, 1.0, mouseNoiseComposite);
+  float color = mouseNoiseComposite > 0.7? checkerColor : 0.0;
+  
+  // gl_FragColor = vec4(vec2(color), 1.0, 1.0); 
+  // return;
   
   if(mouseNoiseComposite < 1.0) {
     gl_FragColor = color == 0.0? vec4(0.0, 0.0, 0.0, 1.0): vec4(0.0, 0.0, 0.0, 0.0);
