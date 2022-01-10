@@ -1,4 +1,5 @@
 import React from "react";
+import ClickableChecker from "./ClickableChecker";
 import { MouseChecker } from "./MouseChecker";
 
 function App() {
@@ -15,8 +16,10 @@ function App() {
       <div className="App">
         <h1>Touchpoint</h1>
       </div>
-      {randomTextList.map((text) => {
-        return <p>{text}</p>;
+      <ClickableChecker>Testing CLickable Area</ClickableChecker>
+      <ClickableChecker>Testing CLickable Area</ClickableChecker>
+      {randomTextList.map((text, index) => {
+        return <p key={index}>{text}</p>;
       })}
     </MouseChecker>
   );

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useContext } from "react";
 import { Vec2 } from "curtainsjs";
 import { Plane } from "react-curtains";
 
@@ -6,19 +6,18 @@ import MouseCheckerShaderFrag from "./MouseCheckerShader.frag";
 import MouseCheckerShaderVert from "./MouseCheckerShader.vert";
 
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+const CheckerContext = React.createContext();
+
+export const useCheckerContext = () => useContext(CheckerContext);
 
 export function MouseChecker({ children }) {
   const mousePos = useRef(new Vec2(0, 0));
   const planeMeasurementRef = useRef();
   const cursorSize = useRef(0);
   const targetCursorSize = useRef(0);
+  const showGlobalCursor = useRef(true);
 
-  const viewportResolution = useRef({
-    x: 0,
-    y: 0,
-  });
-
-  const basicUniforms = {
+  const checkerUniforms = useRef({
     time: {
       name: "uTime",
       type: "1f",
@@ -37,16 +36,16 @@ export function MouseChecker({ children }) {
     resolution: {
       name: "uResolution",
       type: "2f",
-      value: new Vec2(
-        viewportResolution.current.x,
-        viewportResolution.current.y
-      ),
+      value: new Vec2(0, 0),
     },
-  };
+  });
 
+  // State update
   const onRender = (plane) => {
+    // update time value in the plane
     plane.uniforms.time.value++;
 
+    // calculate the mouse position
     const nextMouseCoords = plane.mouseToPlaneCoords(mousePos.current);
     const prevMouseCoords = plane.uniforms.mouse.lastValue;
 
@@ -62,11 +61,13 @@ export function MouseChecker({ children }) {
     const MIN_CURSOR_SIZE = 4;
     const MAX_CURSOR_SIZE = 20;
 
-    targetCursorSize.current = clamp(
-      CURSOR_SCALE_FACTOR * mouseSpeedSquared,
-      MIN_CURSOR_SIZE,
-      MAX_CURSOR_SIZE
-    );
+    targetCursorSize.current = showGlobalCursor.current
+      ? clamp(
+          CURSOR_SCALE_FACTOR * mouseSpeedSquared,
+          MIN_CURSOR_SIZE,
+          MAX_CURSOR_SIZE
+        )
+      : 0.0;
 
     cursorSize.current +=
       (targetCursorSize.current - cursorSize.current) / CURSOR_SENSITIVITY;
@@ -75,9 +76,12 @@ export function MouseChecker({ children }) {
     plane.uniforms.mouse.value = nextMouseCoords;
 
     plane.uniforms.resolution.value.set(
-      viewportResolution.current.x,
-      viewportResolution.current.y
+      checkerUniforms.current.resolution.value.x,
+      checkerUniforms.current.resolution.value.y
     );
+
+    // update the checker uniform base on the plane
+    checkerUniforms.current = plane.uniforms;
   };
 
   // capture the viewport size
@@ -89,12 +93,14 @@ export function MouseChecker({ children }) {
         y: clientRect.height,
       };
     }
-
-    viewportResolution.current = measurePlaneResolution();
-
     function resizeResolution() {
-      viewportResolution.current = measurePlaneResolution();
+      const viewportResolution = measurePlaneResolution();
+      checkerUniforms.current.resolution.value.set(
+        viewportResolution.x,
+        viewportResolution.y
+      );
     }
+    resizeResolution();
     window.addEventListener("resize", resizeResolution);
     return () => {
       window.removeEventListener("resize", resizeResolution);
@@ -107,9 +113,7 @@ export function MouseChecker({ children }) {
       mousePos.current.x = e.clientX;
       mousePos.current.y = e.clientY;
     }
-
     window.addEventListener("mousemove", handleMouseMove);
-
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
     };
@@ -126,16 +130,26 @@ export function MouseChecker({ children }) {
         justifyContent: "stretch",
       }}
     >
-      <Plane
-        // plane init parameters
-        vertexShader={MouseCheckerShaderVert}
-        fragmentShader={MouseCheckerShaderFrag}
-        uniforms={basicUniforms}
-        // plane events
-        onRender={onRender}
+      <CheckerContext.Provider
+        value={{
+          uniforms: checkerUniforms,
+          mousePos: mousePos,
+          showGlobalCursor: showGlobalCursor,
+        }}
       >
-        {children}
-      </Plane>
+        <Plane
+          // plane init parameters
+          vertexShader={MouseCheckerShaderVert}
+          fragmentShader={MouseCheckerShaderFrag}
+          uniforms={checkerUniforms.current}
+          // plane events
+          onRender={onRender}
+          transparent={true}
+          renderOrder={0}
+        >
+          {children}
+        </Plane>
+      </CheckerContext.Provider>
     </div>
   );
 }
